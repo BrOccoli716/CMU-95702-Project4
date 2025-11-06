@@ -1,0 +1,8 @@
+Compile
+javac -cp lib/gson-2.10.1.jar -d out Test.java
+
+Run
+java -cp "out:lib/gson-2.10.1.jar" Test
+
+Catalina
+bash /usr/local/tomcat/bin/catalina.sh run
