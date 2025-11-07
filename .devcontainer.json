@@ -3,5 +3,6 @@
         "dockerfile": "Dockerfile"
     },
     "forwardPorts": [8080],
-    "postCreateCommand": "catalina.sh run"
+    // "postCreateCommand": "catalina.sh run",
+    "postStartCommand": "cp /workspaces/CMU-95702-Project4/ROOT.war /usr/local/tomcat/webapps/ && bash /usr/local/tomcat/bin/catalina.sh run"
 }
