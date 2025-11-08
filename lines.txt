@@ -7,3 +7,10 @@ java -cp "out:lib/gson-2.10.1.jar" Test
 Catalina
 cp /workspaces/CMU-95702-Project4/ROOT.war /usr/local/tomcat/webapps/
 bash /usr/local/tomcat/bin/catalina.sh run
+
+Maven Compile
+apt-get install -y maven
+mvn clean compile
+
+Maven Execute
+mvn exec:java -Dexec.mainClass="MongoTest"
