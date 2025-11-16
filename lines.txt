@@ -1,8 +1,8 @@
 Compile
-javac -cp lib/gson-2.10.1.jar -d out Test.java
+javac -cp lib/gson-2.10.1.jar -d out src/main/java/APITest.java
 
 Run
-java -cp "out:lib/gson-2.10.1.jar" Test
+java -cp "out:lib/gson-2.10.1.jar" APITest
 
 Catalina
 cp /workspaces/CMU-95702-Project4/ROOT.war /usr/local/tomcat/webapps/
@@ -14,3 +14,9 @@ mvn clean compile
 
 Maven Execute
 mvn exec:java -Dexec.mainClass="MongoTest"
+
+ROOT (in myweb)
+javac -cp ".:jakarta.servlet-api-5.0.0.jar:../lib/gson-2.10.1.jar"     -d WEB-INF/classes     PlayerServlet.java
+jar cvf ROOT.war *
+jar tf ROOT.war (check)
+(Move ROOT.war to top directory)

@@ -1,4 +1,6 @@
 APITest.class
 MongoTest.class
 Team.class
+PlayerResponse.class
 Player.class
+Meta.class
