@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -32,6 +36,7 @@ class Player {
     String college, country;
     int draft_year, draft_round, draft_number;
     Team team;
+    String imageUrl;
 }
 
 class Meta {
@@ -49,28 +54,73 @@ public class PlayerServlet extends HttpServlet {
     private static final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
     private Map<String, String> imgUrlMap = new HashMap<>();
 
-    private String fetchResponse(String urlString) throws IOException, URISyntaxException {
-        URL url = new URI(urlString).toURL();
-        System.out.println("Request URL: " + url);
-        // Establish URL connection
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        // Set up request headers
-        conn.setRequestProperty("Authorization", "6b6de5ab-779d-4100-bcb8-533fef7ee07e");
-        conn.setRequestProperty("Accept", "application/json");
-
-        // Check status code
-        int responseCode = conn.getResponseCode();
-        System.out.println("Response Code: " + responseCode);
-        // Read in response
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder json = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null) {
-            json.append(line);
+    private JsonObject fetchResponse(String urlString) {
+        JsonObject result = new JsonObject();
+        Gson gson = new Gson();
+        try {
+            URL url = new URI(urlString).toURL();
+            System.out.println("Request URL: " + url);
+            // Establish URL connection
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            // Set up request headers
+            conn.setRequestProperty("Authorization", "6b6de5ab-779d-4100-bcb8-533fef7ee07e");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            // Check status code
+            int responseCode = conn.getResponseCode();
+            result.addProperty("status", responseCode);
+            System.out.println("Response Code: " + responseCode);
+            if (responseCode == 401) {
+                result.addProperty("error", "Unauthorized query!");
+                return result;
+            } else if (responseCode == 400) {
+                result.addProperty("error", "Bad request! Check again!");
+                return result;
+            } else if (responseCode == 404) {
+                result.addProperty("error", "Specified resources not found!");
+                return result;
+            } else if (responseCode == 406) {
+                result.addProperty("error", "Resource not acceptable (not JSON)!");
+                return result;
+            } else if (responseCode == 429) {
+                result.addProperty("error", "Too many request! API rate limit!");
+                return result;
+            } else if (responseCode == 500) {
+                result.addProperty("error", "Internal server error for API!");
+                return result;
+            } else if (responseCode == 503) {
+                result.addProperty("error", "API currently Unavailable!");
+                return result;
+            }
+            // Read in response
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder json = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                json.append(line);
+            }
+            in.close();
+            JsonElement body = JsonParser.parseString(json.toString());
+            result.add("data", body);
+            return result;
+        } catch (URISyntaxException e) {
+            result = new JsonObject();
+            result.addProperty("status", 400);
+            result.addProperty("error", "URI Syntax Exception: " + e.getMessage());
+            return result;
+        } catch (MalformedURLException e) {
+            result = new JsonObject();
+            result.addProperty("status", 400);
+            result.addProperty("error", "Malformed URL Exception: " + e.getMessage());
+            return result;
+        } catch (IOException e) {
+            result = new JsonObject();
+            result.addProperty("status", 400);
+            result.addProperty("error", "IO Exception: " + e.getMessage());
+            return result;
         }
-        in.close();
-        return json.toString();
     }
     
     @Override
@@ -119,36 +169,88 @@ public class PlayerServlet extends HttpServlet {
         return urlString;
     }
 
+    private void sendError(HttpServletResponse response, String message) throws IOException {
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        JsonObject json = new JsonObject();
+        json.addProperty("error", message);
+        response.getWriter().write(json.toString());
+    }
+
+    private void sendSuccess(HttpServletResponse response, Object data) throws IOException {
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_OK);  // 200
+
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("data", new Gson().toJsonTree(data));
+
+        PrintWriter out = response.getWriter();
+        out.write(wrapper.toString());
+        out.flush();
+    }
+
+    private String repairJson(String json) {
+        json = json.replace("first_name", "firstName");
+        json = json.replace("last_name", "lastName");
+        json = json.replace("jersey_number", "jerseyNumber");
+        json = json.replace("draft_year", "draftYear");
+        json = json.replace("draft_round", "draftRound");
+        json = json.replace("draft_number", "draftNumber");
+        return json;
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
         // Read in parameters from request
-        String firstName = req.getParameter("first_name");
-        String lastName = req.getParameter("last_name");
+        String firstName = req.getParameter("first_name").replace(" ", "_").toLowerCase();
+        String lastName = req.getParameter("last_name").replace(" ", "_").toLowerCase();
+        if (firstName.length() > 20 || lastName.length() > 20) {
+            sendError(res, "Query too long!");
+            return;
+        }
         Gson gson = new Gson();
         ArrayList<Player> players = new ArrayList<>();
-
-        try {
-            // Set up API node and URL
-            String urlString = buildUrl(firstName, lastName, null);
-            Integer cursor = null;
-            while (true) {
-                PlayerResponse json = gson.fromJson(fetchResponse(urlString), PlayerResponse.class);
-                if (json != null) { System.out.println("Fetched " + json.data.size() + " players"); }
-                for (Player p: json.data) { players.add(p); }
-                if (json.meta.next_cursor != null) {
-                    cursor = json.meta.next_cursor;
-                    urlString = buildUrl(firstName, lastName, cursor);
-                } else {
-                    System.out.println("No more pages.");
-                    break;
+        // Set up API node and URL
+        String urlString = buildUrl(firstName, lastName, null);
+        Integer cursor = null;
+        while (true) {
+            JsonObject result = fetchResponse(urlString);
+            if (result.has("error")) {
+                if (result.get("status").getAsInt() != 429) {
+                    sendError(res, result.get("error").getAsString());
+                    return;
                 }
+                break;  // for error 429 (this request exceeds limit, but others count)
             }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+            PlayerResponse json = gson.fromJson(result.get("data"), PlayerResponse.class);
+            if (json != null) { System.out.println("Fetched " + json.data.size() + " players"); }
+            for (Player p: json.data) { 
+                String name = p.first_name.toLowerCase() + "_" + p.last_name.toLowerCase();
+                // String team = p.teamName.toLowerCase();  // Used for TEST
+                String team = p.team.abbreviation.toLowerCase();
+                if (team.isEmpty()) {
+                    team = "NAN";
+                }
+                String key = name.replace(" ", "_") + "_" + team;
+                p.imageUrl = imgUrlMap.get(key);
+                if (p.imageUrl == null) {
+                    name = p.last_name.toLowerCase() + "_" + p.first_name.toLowerCase();
+                    key = name.replace(" ", "_") + "_" + team;
+                    p.imageUrl = imgUrlMap.get(key);
+                }
+                System.out.println(key + " " + p.imageUrl);
+                players.add(p); 
+            }
+            if (json.meta.next_cursor != null) {
+                cursor = json.meta.next_cursor;
+                urlString = buildUrl(firstName, lastName, cursor);
+            } else {
+                System.out.println("No more pages.");
+                break;
+            }
         }
         // response result to front-end
-        res.setContentType("application/json;charset=UTF-8");
-        res.getWriter().print(gson.toJson(players));
+        sendSuccess(res, repairJson(gson.toJson(players)));
     }
 }
