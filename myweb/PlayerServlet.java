@@ -35,7 +35,6 @@ class PlayerResponse {
     public Meta meta;
 }
 
-@WebServlet("/api/player")
 public class PlayerServlet extends HttpServlet {
     private static final String API_URL = "https://api.balldontlie.io/v1/players";
     private static final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
