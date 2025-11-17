@@ -13,6 +13,11 @@ import java.util.Map;
 import java.util.HashMap;
 import com.google.gson.Gson;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 class Team {
     int id;
     String conference, division, city;
@@ -72,23 +77,33 @@ public class PlayerServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         System.out.println("Servlet init: Loading image_html.txt...");
-
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("image_html.txt");
-
             if (is == null) throw new RuntimeException("image_html.txt Not Found!");
-
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-
             List<String> lines = new ArrayList<>();
-            String line;
-
-            while ((line = reader.readLine()) != null) { lines.add(line); }
-
+            String in_line;
+            while ((in_line = reader.readLine()) != null) { lines.add(in_line); }
             System.out.println("Loaded txt (line count approx): finished");
-
             System.out.println("Read in " + lines.size() + " lines");
-
+            for (String line: lines) {
+                Document doc = Jsoup.parse(line);
+                Elements images = doc.select("img");
+                Elements texts = doc.select("tbody").select("tr");
+                for (int i = 0; i < texts.size(); i++) {
+                    Element image = images.get(i);
+                    Element text = texts.get(i);
+                    Elements values = text.select("td");
+                    String name = values.get(0).text();
+                    String team = values.get(1).text();
+                    if (team.isEmpty()) {
+                        team = "NAN";
+                    }
+                    String key = name.toLowerCase().replace(" ", "_") + "_" + team.toLowerCase();
+                    imgUrlMap.put(key, image.attr("src"));
+                }
+            }
+            System.out.println("Processed " + imgUrlMap.size() + " players");
         } catch (Exception e) {
             e.printStackTrace();
             throw new ServletException(e);
@@ -107,8 +122,7 @@ public class PlayerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-
-        // 从请求中读取参数 first_name
+        // Read in parameters from request
         String firstName = req.getParameter("first_name");
         String lastName = req.getParameter("last_name");
         Gson gson = new Gson();
@@ -133,8 +147,7 @@ public class PlayerServlet extends HttpServlet {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
-        // 返回结果给前端
+        // response result to front-end
         res.setContentType("application/json;charset=UTF-8");
         res.getWriter().print(gson.toJson(players));
     }
