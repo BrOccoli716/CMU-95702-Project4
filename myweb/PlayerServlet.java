@@ -180,10 +180,8 @@ public class PlayerServlet extends HttpServlet {
     private void sendSuccess(HttpServletResponse response, Object data) throws IOException {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);  // 200
-
         JsonObject wrapper = new JsonObject();
         wrapper.add("data", new Gson().toJsonTree(data));
-
         PrintWriter out = response.getWriter();
         out.write(repairJson(wrapper.toString()));
         out.flush();
@@ -197,6 +195,23 @@ public class PlayerServlet extends HttpServlet {
         json = json.replace("draft_round", "draftRound");
         json = json.replace("draft_number", "draftNumber");
         return json;
+    }
+
+    private String convertHeight(String height) {
+        String[] parts = height.split("-");
+        if (parts.length != 2) return "Unknown";
+        int feet = Integer.parseInt(parts[0]);
+        int inches = Integer.parseInt(parts[1]);
+        double cm = feet * 30.48 + inches * 2.54;
+        String height_cm = String.format("(%.1f cm)", cm);
+        return height.replace("-", "'") + "\" " + height_cm;
+    }
+
+    private String convertWeight(String weight) {
+        double lb = Double.parseDouble(weight);
+        double kg = lb * 0.453592;
+        String weight_kg = String.format("(%.1f kg)", kg);
+        return weight + " lb " + weight_kg;
     }
 
     @Override
@@ -242,6 +257,8 @@ public class PlayerServlet extends HttpServlet {
                     p.imageUrl = imgUrlMap.get(key);
                 }
                 System.out.println(key + " " + p.imageUrl);
+                p.height = convertHeight(p.height);
+                p.weight = convertWeight(p.weight);
                 players.add(p); 
             }
             if (json.meta.next_cursor != null) {
