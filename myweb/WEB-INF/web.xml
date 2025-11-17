@@ -4,6 +4,10 @@
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
+  <welcome-file-list>
+    <welcome-file>welcome.jsp</welcome-file>
+  </welcome-file-list>
+
   <servlet>
     <servlet-name>PlayerServlet</servlet-name>
     <servlet-class>com.project.api.PlayerServlet</servlet-class>
@@ -11,7 +15,7 @@
 
   <servlet-mapping>
     <servlet-name>PlayerServlet</servlet-name>
-    <url-pattern>/</url-pattern>
+    <url-pattern>/api/player</url-pattern>
   </servlet-mapping>
 
 </web-app>
