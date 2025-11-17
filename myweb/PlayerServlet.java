@@ -185,7 +185,7 @@ public class PlayerServlet extends HttpServlet {
         wrapper.add("data", new Gson().toJsonTree(data));
 
         PrintWriter out = response.getWriter();
-        out.write(wrapper.toString());
+        out.write(repairJson(wrapper.toString()));
         out.flush();
     }
 
@@ -253,6 +253,6 @@ public class PlayerServlet extends HttpServlet {
             }
         }
         // response result to front-end
-        sendSuccess(res, repairJson(gson.toJson(players)));
+        sendSuccess(res, players);
     }
 }
