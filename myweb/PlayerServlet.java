@@ -198,6 +198,7 @@ public class PlayerServlet extends HttpServlet {
     }
 
     private String convertHeight(String height) {
+        if (height == null) { return "Unknown"; }
         String[] parts = height.split("-");
         if (parts.length != 2) return "Unknown";
         int feet = Integer.parseInt(parts[0]);
@@ -208,6 +209,7 @@ public class PlayerServlet extends HttpServlet {
     }
 
     private String convertWeight(String weight) {
+        if (weight == null) { return "Unknown"; }
         double lb = Double.parseDouble(weight);
         double kg = lb * 0.453592;
         String weight_kg = String.format("(%.1f kg)", kg);
