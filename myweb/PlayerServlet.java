@@ -68,6 +68,7 @@ public class PlayerServlet extends HttpServlet {
         String urlString = "https://api.balldontlie.io/v1/players?per_page=100";
         if (firstName != "") { urlString += "&first_name=%s".formatted(firstName); }
         if (lastName != "") { urlString += "&last_name=%s".formatted(lastName); }
+        System.out.println("firstName: " + firstName + "\nlastName: " + lastName);
         if (next_cursor != null) { urlString += "&cursor=%s".formatted(String.valueOf(next_cursor)); }
         return urlString;
     }
