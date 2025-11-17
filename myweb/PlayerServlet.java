@@ -203,9 +203,11 @@ public class PlayerServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
         // Read in parameters from request
-        String firstName = req.getParameter("first_name").replace(" ", "_").toLowerCase();
-        String lastName = req.getParameter("last_name").replace(" ", "_").toLowerCase();
-        if (firstName.length() > 20 || lastName.length() > 20) {
+        String firstName = req.getParameter("first_name");
+        if (firstName != null) { firstName = firstName.replace(" ", "_").toLowerCase(); }
+        String lastName = req.getParameter("last_name");
+        if (lastName != null) { lastName = lastName.replace(" ", "_").toLowerCase(); }
+        if ((firstName != null && firstName.length() > 20) || (lastName != null && lastName.length() > 20)) {
             sendError(res, "Query too long!");
             return;
         }
