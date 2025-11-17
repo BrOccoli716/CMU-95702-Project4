@@ -3,10 +3,14 @@ package com.project.api;
 import java.net.*;
 import java.io.*;
 import jakarta.servlet.http.*;
+import jakarta.servlet.ServletException;
+import java.nio.charset.StandardCharsets;
 import jakarta.servlet.annotation.*;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import com.google.gson.Gson;
 
 class Team {
@@ -38,6 +42,7 @@ class PlayerResponse {
 public class PlayerServlet extends HttpServlet {
     private static final String API_URL = "https://api.balldontlie.io/v1/players";
     private static final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
+    private Map<String, String> imgUrlMap = new HashMap<>();
 
     private String fetchResponse(String urlString) throws IOException, URISyntaxException {
         URL url = new URI(urlString).toURL();
@@ -61,6 +66,33 @@ public class PlayerServlet extends HttpServlet {
         }
         in.close();
         return json.toString();
+    }
+    
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        System.out.println("Servlet init: Loading image_html.txt...");
+
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("image_html.txt");
+
+            if (is == null) throw new RuntimeException("image_html.txt Not Found!");
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+
+            List<String> lines = new ArrayList<>();
+            String line;
+
+            while ((line = reader.readLine()) != null) { lines.add(line); }
+
+            System.out.println("Loaded txt (line count approx): finished");
+
+            System.out.println("Read in " + lines.size() + " lines");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ServletException(e);
+        }
     }
 
     private String buildUrl(String firstName, String lastName, Integer next_cursor) {
