@@ -18,6 +18,11 @@
     <url-pattern>/api/player</url-pattern>
   </servlet-mapping>
 
+  <servlet>
+    <servlet-name>LogsServlet</servlet-name>
+    <servlet-class>com.project.api.LogsServlet</servlet-class>
+  </servlet>
+
   <servlet-mapping>
     <servlet-name>LogsServlet</servlet-name>
     <url-pattern>/logs</url-pattern>
