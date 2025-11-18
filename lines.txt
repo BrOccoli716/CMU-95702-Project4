@@ -20,3 +20,5 @@ javac -cp ".:../lib/jakarta.servlet-api-5.0.0.jar:WEB-INF/lib/*" -d WEB-INF/clas
 jar cvf ROOT.war *
 jar tf ROOT.war (check)
 (Move ROOT.war to top directory)
+
+git config commit.gpgsign false

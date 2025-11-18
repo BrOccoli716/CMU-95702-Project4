@@ -54,6 +54,43 @@ public class PlayerServlet extends HttpServlet {
     private static final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
     private Map<String, String> imgUrlMap = new HashMap<>();
 
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        System.out.println("Servlet init: Loading image_html.txt...");
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("image_html.txt");
+            if (is == null) throw new RuntimeException("image_html.txt Not Found!");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            List<String> lines = new ArrayList<>();
+            String in_line;
+            while ((in_line = reader.readLine()) != null) { lines.add(in_line); }
+            System.out.println("Loaded txt (line count approx): finished");
+            System.out.println("Read in " + lines.size() + " lines");
+            for (String line: lines) {
+                Document doc = Jsoup.parse(line);
+                Elements images = doc.select("img");
+                Elements texts = doc.select("tbody").select("tr");
+                for (int i = 0; i < texts.size(); i++) {
+                    Element image = images.get(i);
+                    Element text = texts.get(i);
+                    Elements values = text.select("td");
+                    String name = values.get(0).text();
+                    String team = values.get(1).text();
+                    if (team.isEmpty()) {
+                        team = "NAN";
+                    }
+                    String key = name.toLowerCase().replace(" ", "_") + "_" + team.toLowerCase();
+                    imgUrlMap.put(key, image.attr("src"));
+                }
+            }
+            System.out.println("Processed " + imgUrlMap.size() + " players");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ServletException(e);
+        }
+    }
+
     private JsonObject fetchResponse(String urlString) {
         JsonObject result = new JsonObject();
         Gson gson = new Gson();
@@ -122,43 +159,6 @@ public class PlayerServlet extends HttpServlet {
             return result;
         }
     }
-    
-    @Override
-    public void init() throws ServletException {
-        super.init();
-        System.out.println("Servlet init: Loading image_html.txt...");
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("image_html.txt");
-            if (is == null) throw new RuntimeException("image_html.txt Not Found!");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            List<String> lines = new ArrayList<>();
-            String in_line;
-            while ((in_line = reader.readLine()) != null) { lines.add(in_line); }
-            System.out.println("Loaded txt (line count approx): finished");
-            System.out.println("Read in " + lines.size() + " lines");
-            for (String line: lines) {
-                Document doc = Jsoup.parse(line);
-                Elements images = doc.select("img");
-                Elements texts = doc.select("tbody").select("tr");
-                for (int i = 0; i < texts.size(); i++) {
-                    Element image = images.get(i);
-                    Element text = texts.get(i);
-                    Elements values = text.select("td");
-                    String name = values.get(0).text();
-                    String team = values.get(1).text();
-                    if (team.isEmpty()) {
-                        team = "NAN";
-                    }
-                    String key = name.toLowerCase().replace(" ", "_") + "_" + team.toLowerCase();
-                    imgUrlMap.put(key, image.attr("src"));
-                }
-            }
-            System.out.println("Processed " + imgUrlMap.size() + " players");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ServletException(e);
-        }
-    }
 
     private String buildUrl(String firstName, String lastName, Integer next_cursor) {
         String urlString = "https://api.balldontlie.io/v1/players?per_page=100";
@@ -219,6 +219,10 @@ public class PlayerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
+        // Start timer
+        long startTime = System.currentTimeMillis();
+        // Define latency
+        long latency;
         // Read in parameters from request
         String firstName = req.getParameter("first_name");
         if (firstName != null) { firstName = firstName.replace(" ", "_").toLowerCase(); }
@@ -226,6 +230,8 @@ public class PlayerServlet extends HttpServlet {
         if (lastName != null) { lastName = lastName.replace(" ", "_").toLowerCase(); }
         if ((firstName != null && firstName.length() > 20) || (lastName != null && lastName.length() > 20)) {
             sendError(res, "Query too long!");
+            latency = System.currentTimeMillis() - startTime;
+            LogHelper.logRequest(req, HttpServletResponse.SC_BAD_REQUEST, latency, 0);
             return;
         }
         Gson gson = new Gson();
@@ -233,17 +239,21 @@ public class PlayerServlet extends HttpServlet {
         // Set up API node and URL
         String urlString = buildUrl(firstName, lastName, null);
         Integer cursor = null;
+        int result_size = 0;
         while (true) {
             JsonObject result = fetchResponse(urlString);
             if (result.has("error")) {
                 if (result.get("status").getAsInt() != 429) {
                     sendError(res, result.get("error").getAsString());
+                    latency = System.currentTimeMillis() - startTime;
+                    LogHelper.logRequest(req, HttpServletResponse.SC_BAD_REQUEST, latency, 0);
                     return;
                 }
                 break;  // for error 429 (this request exceeds limit, but others count)
             }
             PlayerResponse json = gson.fromJson(result.get("data"), PlayerResponse.class);
             if (json != null) { System.out.println("Fetched " + json.data.size() + " players"); }
+            result_size += json.toString().length();
             for (Player p: json.data) { 
                 String name = p.first_name.toLowerCase() + "_" + p.last_name.toLowerCase();
                 // String team = p.teamName.toLowerCase();  // Used for TEST
@@ -273,5 +283,7 @@ public class PlayerServlet extends HttpServlet {
         }
         // response result to front-end
         sendSuccess(res, players);
+        latency = System.currentTimeMillis() - startTime;
+        LogHelper.logRequest(req, HttpServletResponse.SC_OK, latency, result_size);
     }
 }
