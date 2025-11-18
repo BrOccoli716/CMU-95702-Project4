@@ -20,14 +20,14 @@ public class LogsDataServlet extends HttpServlet {
         // 1. API REQUEST FREQUENCY
         Map<String, Integer> apiFrequency = new HashMap<>();
         for (Document log : logs) {
-            String path = log.getString("path");
+            String path = log.getString("requestPath");
             apiFrequency.put(path, apiFrequency.getOrDefault(path, 0) + 1);
         }
         // 2. AVERAGE LATENCY
         Map<String, List<Long>> latencyByAPI = new HashMap<>();
         for (Document log : logs) {
-            String path = log.getString("path");
-            Long latency = log.getLong("latencyMs");
+            String path = log.getString("requestPath");
+            Long latency = log.getLong("thirdPartyLatency");
             latencyByAPI.putIfAbsent(path, new ArrayList<>());
             latencyByAPI.get(path).add(latency);
         }
@@ -42,7 +42,7 @@ public class LogsDataServlet extends HttpServlet {
         int badReqCount = 0;
 
         for (Document log : logs) {
-            int status = log.getInteger("status", 200);
+            int status = log.getInteger("statusCode", 200);
             if (status == HttpServletResponse.SC_OK) successCount++;
             else if (status == HttpServletResponse.SC_BAD_REQUEST) badReqCount++;
         }
