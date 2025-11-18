@@ -56,7 +56,10 @@
     <%
         if (apiFreq != null) {
             for (String key : apiFreq.keySet()) {
-                out.println("<tr><td>" + key + "</td><td>" + apiFreq.getInteger(key) + "</td></tr>");
+                <tr>
+                    <td><%= api %></td>
+                    <td><%= apiFreq.get(api) %></td>
+                </tr>
             }
         }
     %>
@@ -69,7 +72,10 @@
     <%
         if (avgLatency != null) {
             for (String key : avgLatency.keySet()) {
-                out.println("<tr><td>" + key + "</td><td>" + avgLatency.getDouble(key) + "</td></tr>");
+                <tr>
+                    <td><%= api %></td>
+                    <td><%= avgLatency.get(api) %></td>
+                </tr>
             }
         }
     %>
@@ -77,7 +83,8 @@
 
 <!-- Error Rate -->
 <h2>Error Rate</h2>
-<p><strong><%= errorRate != null ? String.format("%.2f%%", errorRate * 100) : "N/A" %></strong></p>
+<p>Success: <%= errorRate.getInteger("success") %></p>
+<p>Bad Request: <%= errorRate.getInteger("badRequest") %></p>
 
 <!-- Top Devices -->
 <h2>Top Devices</h2>
@@ -86,7 +93,7 @@
     <%
         if (topDevices != null) {
             for (Document d : topDevices) {
-                out.println("<tr><td>" + d.getString("_id") + "</td><td>" + d.getInteger("count") + "</td></tr>");
+                out.println("<tr><td>" + d.getString("device") + "</td><td>" + d.getInteger("count") + "</td></tr>");
             }
         }
     %>
@@ -99,7 +106,7 @@
     <%
         if (topPlayers != null) {
             for (Document p : topPlayers) {
-                out.println("<tr><td>" + p.getString("_id") + "</td><td>" + p.getInteger("count") + "</td></tr>");
+                out.println("<tr><td>" + p.getString("first_name") + " " + p.getString("last_name") + "</td><td>" + p.getInteger("count") + "</td></tr>");
             }
         }
     %>
@@ -120,10 +127,13 @@
             for (Document log : logs) {
                 out.println("<tr>");
                 out.println("<td>" + log.getDate("timestamp") + "</td>");
-                out.println("<td>" + log.getString("path") + "</td>");
-                out.println("<td>" + log.getString("device") + "</td>");
-                out.println("<td>" + log.getLong("latencyMs") + "</td>");
-                out.println("<td>" + log.getInteger("status") + "</td>");
+                out.println("<td>" + log.getDate("clientIP") + "</td>");
+                out.println("<td>" + log.getString("deviceModel") + "</td>");
+                out.println("<td>" + log.getString("requestPath") + "</td>");
+                out.println("<td>" + log.getLong("requestParams") + "</td>");
+                out.println("<td>" + log.getInteger("thirdPartyLatency") + "</td>");
+                out.println("<td>" + log.getDate("statusCode") + "</td>");
+                out.println("<td>" + log.getDate("responseSize") + "</td>");
                 out.println("</tr>");
             }
         }
