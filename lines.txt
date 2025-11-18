@@ -16,7 +16,7 @@ Maven Execute
 mvn exec:java -Dexec.mainClass="MongoTest"
 
 ROOT (in myweb)
-javac -cp ".:../lib/jakarta.servlet-api-5.0.0.jar:WEB-INF/lib/*"     -d WEB-INF/classes     PlayerServlet.java
+javac -cp ".:../lib/jakarta.servlet-api-5.0.0.jar:WEB-INF/lib/*"     -d WEB-INF/classes     *.java
 jar cvf ROOT.war *
 jar tf ROOT.war (check)
 (Move ROOT.war to top directory)

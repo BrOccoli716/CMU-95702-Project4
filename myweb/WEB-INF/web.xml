@@ -18,4 +18,9 @@
     <url-pattern>/api/player</url-pattern>
   </servlet-mapping>
 
+  <servlet-mapping>
+    <servlet-name>LogsServlet</servlet-name>
+    <url-pattern>/logs</url-pattern>
+  </servlet-mapping>
+
 </web-app>
