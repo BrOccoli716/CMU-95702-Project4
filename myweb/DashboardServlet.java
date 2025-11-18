@@ -5,7 +5,6 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-@WebServlet("/dashboard")
 public class DashboardServlet extends HttpServlet {
 
     @Override
