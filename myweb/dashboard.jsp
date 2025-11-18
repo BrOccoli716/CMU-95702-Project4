@@ -9,9 +9,9 @@
         return;
     }
 
-    Document apiFreq = result.get("apiFrequency", Document.class);
-    Document avgLatency = result.get("avgLatency", Document.class);
-    Double errorRate = result.getDouble("errorRate");
+    Map<String, Integer> apiFreq = (Map<String, Integer>) result.get("apiFrequency");
+    Map<String, Double> avgLatency = (Map<String, Double>) result.get("avgLatency");
+    Document errorRate = result.get("errorRate", Document.class);
     List<Document> topDevices = (List<Document>) result.get("topDevices");
     List<Document> topPlayers = (List<Document>) result.get("topPlayers");
     List<Document> logs = (List<Document>) result.get("logs");
