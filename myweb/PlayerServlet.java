@@ -272,6 +272,7 @@ public class PlayerServlet extends HttpServlet {
                 p.height = convertHeight(p.height);
                 p.weight = convertWeight(p.weight);
                 players.add(p); 
+                LogHelper.incrementPlayerCount(p.id, p.first_name + " " + p.last_name);
             }
             if (json.meta.next_cursor != null) {
                 cursor = json.meta.next_cursor;
