@@ -19,13 +19,23 @@
   </servlet-mapping>
 
   <servlet>
-    <servlet-name>LogsServlet</servlet-name>
-    <servlet-class>com.project.api.LogsServlet</servlet-class>
+    <servlet-name>LogsDataServlet</servlet-name>
+    <servlet-class>com.project.api.LogsDataServlet</servlet-class>
   </servlet>
 
   <servlet-mapping>
-    <servlet-name>LogsServlet</servlet-name>
-    <url-pattern>/logs</url-pattern>
+    <servlet-name>LogsDataServlet</servlet-name>
+    <url-pattern>/api/logs</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>DashboardServlet</servlet-name>
+    <servlet-class>com.project.api.DashboardServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>DashboardServlet</servlet-name>
+    <url-pattern>/dashboard</url-pattern>
   </servlet-mapping>
 
 </web-app>
