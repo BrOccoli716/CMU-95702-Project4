@@ -25,7 +25,7 @@ public class DashboardServlet extends HttpServlet {
             throws IOException, ServletException {
 
         // 调用你的 LogsDataServlet 所返回的 JSON
-        String logsUrl = "https://YOUR-CODESPACE-URL/api/logs-data";
+        String logsUrl = "https://reimagined-space-garbanzo-66x5755q6wr35rrg-8080.app.github.dev/api/logs";
 
         URL url = new URL(logsUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
