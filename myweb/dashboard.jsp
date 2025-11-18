@@ -1,91 +1,134 @@
-<%@ page contentType="text/html; charset=UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page import="org.bson.Document" %>
+<%@ page import="java.util.*" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
+<%
+    Document result = (Document) request.getAttribute("result");
+    if (result == null) {
+        out.println("<h2>No analytics data available.</h2>");
+        return;
+    }
+
+    Document apiFreq = result.get("apiFrequency", Document.class);
+    Document avgLatency = result.get("avgLatency", Document.class);
+    Double errorRate = result.getDouble("errorRate");
+    List<Document> topDevices = (List<Document>) result.get("topDevices");
+    List<Document> topPlayers = (List<Document>) result.get("topPlayers");
+    List<Document> logs = (List<Document>) result.get("logs");
+%>
 
 <html>
 <head>
-    <title>Operations Dashboard</title>
+    <title>Dashboard Analytics</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        h1 { font-size: 36px; }
-        h2 { margin-top: 40px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; }
-        th { background-color: #eee; }
-        .section { margin-bottom: 80px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        h2 {
+            margin-top: 40px;
+        }
+        table {
+            width: 70%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        table, th, td {
+            border: 1px solid #888;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #EEE;
+        }
     </style>
 </head>
-
 <body>
 
-<h1>Operations Dashboard</h1>
+<h1>Server Dashboard</h1>
 
-<div class="section">
-    <h2>API Request Frequency</h2>
-    <table>
-        <tr><th>API Path</th><th>Count</th></tr>
-        <c:forEach var="entry" items="${apiFrequency}">
-            <tr><td>${entry.key}</td><td>${entry.value}</td></tr>
-        </c:forEach>
-    </table>
-</div>
+<!-- API Frequency -->
+<h2>API Request Frequency</h2>
+<table>
+    <tr><th>API</th><th>Count</th></tr>
+    <%
+        if (apiFreq != null) {
+            for (String key : apiFreq.keySet()) {
+                out.println("<tr><td>" + key + "</td><td>" + apiFreq.getInteger(key) + "</td></tr>");
+            }
+        }
+    %>
+</table>
 
-<div class="section">
-    <h2>Average API Latency</h2>
-    <table>
-        <tr><th>API Path</th><th>Latency (ms)</th></tr>
-        <c:forEach var="entry" items="${avgLatency}">
-            <tr><td>${entry.key}</td><td>${entry.value}</td></tr>
-        </c:forEach>
-    </table>
-</div>
+<!-- Average Latency -->
+<h2>Average Latency (ms)</h2>
+<table>
+    <tr><th>API</th><th>Average Latency</th></tr>
+    <%
+        if (avgLatency != null) {
+            for (String key : avgLatency.keySet()) {
+                out.println("<tr><td>" + key + "</td><td>" + avgLatency.getDouble(key) + "</td></tr>");
+            }
+        }
+    %>
+</table>
 
-<div class="section">
-    <h2>Error Rate</h2>
-    <table>
-        <tr><th>Success</th><th>Bad Request</th></tr>
-        <tr>
-            <td>${errorRate.success}</td>
-            <td>${errorRate.badRequest}</td>
-        </tr>
-    </table>
-</div>
+<!-- Error Rate -->
+<h2>Error Rate</h2>
+<p><strong><%= errorRate != null ? String.format("%.2f%%", errorRate * 100) : "N/A" %></strong></p>
 
-<div class="section">
-    <h2>Top Device Models</h2>
-    <table>
-        <tr><th>Device</th><th>Count</th></tr>
-        <c:forEach var="dev" items="${topDevices}">
-            <tr>
-                <td>${dev.device}</td>
-                <td>${dev.count}</td>
-            </tr>
-        </c:forEach>
-    </table>
-</div>
+<!-- Top Devices -->
+<h2>Top Devices</h2>
+<table>
+    <tr><th>Device</th><th>Count</th></tr>
+    <%
+        if (topDevices != null) {
+            for (Document d : topDevices) {
+                out.println("<tr><td>" + d.getString("_id") + "</td><td>" + d.getInteger("count") + "</td></tr>");
+            }
+        }
+    %>
+</table>
 
-<div class="section">
-    <h2>Top Searched Players</h2>
-    <ul>
-        <c:forEach var="p" items="${topPlayers}">
-            <li>${p}</li>
-        </c:forEach>
-    </ul>
-</div>
+<!-- Top Players -->
+<h2>Top Searched Players</h2>
+<table>
+    <tr><th>Player Name</th><th>Search Count</th></tr>
+    <%
+        if (topPlayers != null) {
+            for (Document p : topPlayers) {
+                out.println("<tr><td>" + p.getString("_id") + "</td><td>" + p.getInteger("count") + "</td></tr>");
+            }
+        }
+    %>
+</table>
 
-<div class="section">
-    <h2>Full Logs</h2>
-    <table>
-        <tr><th>Time</th><th>Query</th><th>Path</th><th>Latency</th></tr>
-        <c:forEach var="log" items="${logs}">
-            <tr>
-                <td>${log.timestamp}</td>
-                <td>${log.query}</td>
-                <td>${log.path}</td>
-                <td>${log.latencyMs}</td>
-            </tr>
-        </c:forEach>
-    </table>
-</div>
+<!-- Logs -->
+<h2>All Logs</h2>
+<table style="width:90%;">
+    <tr>
+        <th>Time</th>
+        <th>API</th>
+        <th>Device</th>
+        <th>Latency (ms)</th>
+        <th>Status</th>
+    </tr>
+    <%
+        if (logs != null) {
+            for (Document log : logs) {
+                out.println("<tr>");
+                out.println("<td>" + log.getDate("timestamp") + "</td>");
+                out.println("<td>" + log.getString("path") + "</td>");
+                out.println("<td>" + log.getString("device") + "</td>");
+                out.println("<td>" + log.getLong("latencyMs") + "</td>");
+                out.println("<td>" + log.getInteger("status") + "</td>");
+                out.println("</tr>");
+            }
+        }
+    %>
+</table>
 
 </body>
 </html>
