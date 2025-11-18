@@ -1,78 +1,62 @@
 package com.project.api;
 
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import java.util.Map;
+import java.util.List;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class DashboardServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+            throws IOException, ServletException {
 
-        resp.setContentType("text/html; charset=UTF-8");
-        PrintWriter out = resp.getWriter();
+        // 调用你的 LogsDataServlet 所返回的 JSON
+        String logsUrl = "https://YOUR-CODESPACE-URL/api/logs-data";
 
-        out.println("<html><head><title>Operations Dashboard</title>");
-        out.println("<style>");
-        out.println("table, th, td { border:1px solid black; border-collapse:collapse; padding:6px; }");
-        out.println("</style></head><body>");
+        URL url = new URL(logsUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Accept", "application/json");
 
-        out.println("<h1>Operations Dashboard</h1>");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder jsonSB = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) jsonSB.append(line);
+        reader.close();
 
-        out.println("<h2>API Analytics</h2>");
-        out.println("<div id='apiFrequency'></div>");
-        out.println("<div id='avgLatency'></div>");
-        out.println("<div id='errorRate'></div>");
-        out.println("<div id='deviceModels'></div>");
-        out.println("<div id='topPlayers'></div>");
+        // 解析 JSON
+        Gson gson = new Gson();
+        JsonObject root = gson.fromJson(jsonSB.toString(), JsonObject.class);
 
-        out.println("<h2>Full Logs</h2>");
-        out.println("<div id='logsTable'></div>");
+        // 传给 JSP 的对象
+        req.setAttribute("apiFrequency", gson.fromJson(root.get("apiFrequency"), Map.class));
+        req.setAttribute("avgLatency", gson.fromJson(root.get("avgLatency"), Map.class));
+        req.setAttribute("errorRate", gson.fromJson(root.get("errorRate"), Map.class));
 
-        out.println("<script>");
-        out.println("" +
-                "fetch('/myweb/api/logs')\n" +
-                "  .then(res => res.json())\n" +
-                "  .then(data => buildTables(data));\n" +
-                "\n" +
-                "function buildTables(data) {\n" +
+        req.setAttribute("topDevices",
+                gson.fromJson(root.get("topDevices"), List.class));
 
-                "  // API Frequency\n" +
-                "  let apiHTML = '<h3>API Request Frequency</h3><table><tr><th>API</th><th>Count</th></tr>';\n" +
-                "  for (let api in data.apiFrequency) apiHTML += `<tr><td>${api}</td><td>${data.apiFrequency[api]}</td></tr>`;\n" +
-                "  apiHTML += '</table>'; document.getElementById('apiFrequency').innerHTML = apiHTML;\n" +
+        req.setAttribute("topPlayers",
+                gson.fromJson(root.get("topPlayers"), List.class));
 
-                "  // Avg Latency\n" +
-                "  let latHTML = '<h3>Average Latency (ms)</h3><table><tr><th>API</th><th>Latency</th></tr>';\n" +
-                "  for (let api in data.avgLatency) latHTML += `<tr><td>${api}</td><td>${data.avgLatency[api].toFixed(2)}</td></tr>`;\n" +
-                "  latHTML += '</table>'; document.getElementById('avgLatency').innerHTML = latHTML;\n" +
+        req.setAttribute("logs",
+                gson.fromJson(root.get("logs"), List.class));
 
-                "  // Error Rate\n" +
-                "  let e = data.errorRate;\n" +
-                "  let errHTML = '<h3>Error Rate</h3><table><tr><th>Status</th><th>Count</th></tr>' +\n" +
-                "                `<tr><td>Success (200)</td><td>${e.success}</td></tr>` +\n" +
-                "                `<tr><td>Bad Request (400)</td><td>${e.badRequest}</td></tr>` +\n" +
-                "                '</table>';\n" +
-                "  document.getElementById('errorRate').innerHTML = errHTML;\n" +
-
-                "  // Top Devices\n" +
-                "  let devHTML = '<h3>Top 5 Device Models</h3><table><tr><th>Device</th><th>Count</th></tr>';\n" +
-                "  for (let d of data.topDevices) devHTML += `<tr><td>${d.device}</td><td>${d.count}</td></tr>`;\n" +
-                "  devHTML += '</table>'; document.getElementById('deviceModels').innerHTML = devHTML;\n" +
-
-                "  // Top Players\n" +
-                "  let pHTML = '<h3>Top 5 Players</h3><table><tr><th>Player</th><th>Count</th></tr>';\n" +
-                "  for (let p of data.topPlayers) pHTML += `<tr><td>${p.playerName}</td><td>${p.count}</td></tr>`;\n" +
-                "  pHTML += '</table>'; document.getElementById('topPlayers').innerHTML = pHTML;\n" +
-
-                "  // Full Logs\n" +
-                "  let logsHTML = '<table><tr><th>Time</th><th>Path</th><th>Method</th><th>Device</th><th>Status</th><th>Latency</th></tr>';\n" +
-                "  for (let l of data.logs) logsHTML += `<tr><td>${l.timestamp}</td><td>${l.path}</td><td>${l.method}</td><td>${l.deviceModel || ''}</td><td>${l.status}</td><td>${l.latencyMs}</td></tr>`;\n" +
-                "  logsHTML += '</table>'; document.getElementById('logsTable').innerHTML = logsHTML;\n" +
-                "}\n");
-
-        out.println("</script></body></html>");
+        // forward 给 JSP
+        req.getRequestDispatcher("/dashboard.jsp").forward(req, resp);
     }
 }
