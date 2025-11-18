@@ -37,10 +37,12 @@ public class DashboardServlet extends HttpServlet {
         String line;
         while ((line = reader.readLine()) != null) jsonSB.append(line);
         reader.close();
+        String raw = jsonSB.toString();
 
-        // 解析 JSON
+        // Parse JSON
         Gson gson = new Gson();
-        JsonObject root = gson.fromJson(jsonSB.toString(), JsonObject.class);
+        String json = gson.fromJson(raw, String.class);
+        JsonObject root = gson.fromJson(json, JsonObject.class);
 
         // 传给 JSP 的对象
         req.setAttribute("apiFrequency", gson.fromJson(root.get("apiFrequency"), Map.class));
