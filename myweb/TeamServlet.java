@@ -90,14 +90,18 @@ public class TeamServlet extends HttpServlet {
             for (JsonElement e : data) {
                 JsonObject teamJson = e.getAsJsonObject();
                 if (teamJson.get("id").getAsInt() > 30) { continue; }
+                String full_name = teamJson.get("full_name").getAsString();
+                if (full_name.equals("LA Clippers")) { full_name = "Los Angeles Clippers"; }
+                String city = teamJson.get("city").getAsString();
+                if (city.equals("LA")) { city = "Los Angeles"; }
                 Document team = new Document("id", teamJson.get("id").getAsInt())
-                        .append("full_name", teamJson.get("full_name").getAsString())
+                        .append("full_name", full_name)
                         .append("name", teamJson.get("name").getAsString())
-                        .append("city", teamJson.get("city").getAsString())
+                        .append("city", city)
                         .append("division", teamJson.get("division").getAsString())
                         .append("conference", teamJson.get("conference").getAsString())
                         .append("abbreviation", teamJson.get("abbreviation").getAsString())
-                        .append("imageUrl", imageUrlMap.get(teamJson.get("full_name").getAsString().toLowerCase()));
+                        .append("imageUrl", imageUrlMap.get(full_name.toLowerCase()));
                 allTeams.add(team);
             }
             apiLatency = System.currentTimeMillis() - start;
