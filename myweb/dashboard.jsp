@@ -116,14 +116,14 @@
         <% if (logs != null) { %>
             <% for (Document log : logs) { %>
                 <% out.println("<tr>"); %>
-                <% out.println("<td>" + log.getDate("timestamp") + "</td>"); %>
-                <% out.println("<td>" + log.getDate("clientIP") + "</td>"); %>
+                <% out.println("<td>" + log.getLong("timestamp") + "</td>"); %>
+                <% out.println("<td>" + log.getString("clientIP") + "</td>"); %>
                 <% out.println("<td>" + log.getString("deviceModel") + "</td>"); %>
                 <% out.println("<td>" + log.getString("requestPath") + "</td>"); %>
-                <% out.println("<td>" + log.getLong("requestParams") + "</td>"); %>
-                <% out.println("<td>" + log.getInteger("thirdPartyLatency") + "</td>"); %>
-                <% out.println("<td>" + log.getDate("statusCode") + "</td>"); %>
-                <% out.println("<td>" + log.getDate("responseSize") + "</td>"); %>
+                <% out.println("<td>" + log.getString("requestParams") + "</td>"); %>
+                <% out.println("<td>" + log.getLong("thirdPartyLatency") + "</td>"); %>
+                <% out.println("<td>" + log.getInteger("statusCode") + "</td>"); %>
+                <% out.println("<td>" + log.getInteger("responseSize") + "</td>"); %>
                 <% out.println("</tr>"); %>
             <% } %>
         <% } %>
