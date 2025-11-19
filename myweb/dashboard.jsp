@@ -54,8 +54,8 @@
     <% if (apiFreq != null) { %>
         <% for (String key : apiFreq.keySet()) { %>
             <tr>
-                <td><%= api %></td>
-                <td><%= apiFreq.get(api) %></td>
+                <td><%= key %></td>
+                <td><%= apiFreq.get(key) %></td>
             </tr> %>
         <% } %>
     <% } %>
@@ -68,8 +68,8 @@
     <% if (avgLatency != null) { %>
         <% for (String key : avgLatency.keySet()) { %>
             <tr>
-                <td><%= api %></td>
-                <td><%= avgLatency.get(api) %></td>
+                <td><%= key %></td>
+                <td><%= avgLatency.get(key) %></td>
             </tr>
         <% } %>
     <% } %>
