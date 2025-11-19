@@ -26,6 +26,7 @@ class Team {
     int id;
     String conference, division, city;
     String name, full_name, abbreviation;
+    String imageUrl;
 }
 
 class Player {
@@ -50,17 +51,17 @@ class PlayerResponse {
 }
 
 public class PlayerServlet extends HttpServlet {
-    private static final String API_URL = "https://api.balldontlie.io/v1/players";
-    private static final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
+    private final String API_URL = "https://api.balldontlie.io/v1/players?per_page=100";
+    private final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
     private Map<String, String> imgUrlMap = new HashMap<>();
 
     @Override
     public void init() throws ServletException {
         super.init();
-        System.out.println("Servlet init: Loading image_html.txt...");
+        System.out.println("Servlet init: Loading player_image_html.txt...");
         try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("image_html.txt");
-            if (is == null) throw new RuntimeException("image_html.txt Not Found!");
+            InputStream is = getClass().getClassLoader().getResourceAsStream("player_image_html.txt");
+            if (is == null) throw new RuntimeException("player_image_html.txt Not Found!");
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             List<String> lines = new ArrayList<>();
             String in_line;
@@ -101,7 +102,7 @@ public class PlayerServlet extends HttpServlet {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             // Set up request headers
-            conn.setRequestProperty("Authorization", "6b6de5ab-779d-4100-bcb8-533fef7ee07e");
+            conn.setRequestProperty("Authorization", API_KEY);
             conn.setRequestProperty("Accept", "application/json");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
@@ -161,7 +162,7 @@ public class PlayerServlet extends HttpServlet {
     }
 
     private String buildUrl(String firstName, String lastName, Integer next_cursor) {
-        String urlString = "https://api.balldontlie.io/v1/players?per_page=100";
+        String urlString = API_URL;
         if (firstName != "" && firstName != null) { urlString += "&first_name=%s".formatted(firstName); }
         if (lastName != "" && lastName != null) { urlString += "&last_name=%s".formatted(lastName); }
         // System.out.println("firstName: " + firstName + "\nlastName: " + lastName);
