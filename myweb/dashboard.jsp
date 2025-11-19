@@ -2,18 +2,20 @@
 <%@ page import="java.util.*" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
-<% Document result = (Document) request.getAttribute("result"); %>
-<% if (result == null) { %>
-    <% out.println("<h2>No analytics data available.</h2>"); %>
-<% } %>
-<% else { %>
-    <% Map<String, Integer> apiFreq = (Map<String, Integer>) result.get("apiFrequency"); %>
-    <% Map<String, Double> avgLatency = (Map<String, Double>) result.get("avgLatency"); %>
-    <% Document errorRate = result.get("errorRate", Document.class); %>
-    <% List<Document> topDevices = (List<Document>) result.get("topDevices"); %>
-    <% List<Document> topPlayers = (List<Document>) result.get("topPlayers"); %>
-    <% List<Document> logs = (List<Document>) result.get("logs"); %>
-
+<% 
+    Document result = (Document) request.getAttribute("result");
+    if (result == null) { 
+%>
+    <h2>No analytics data available.</h2>
+<% 
+    } else {
+        Map<String, Integer> apiFreq = (Map<String, Integer>) result.get("apiFrequency");
+        Map<String, Double> avgLatency = (Map<String, Double>) result.get("avgLatency");
+        Document errorRate = result.get("errorRate", Document.class);
+        List<Document> topDevices = (List<Document>) result.get("topDevices");
+        List<Document> topPlayers = (List<Document>) result.get("topPlayers");
+        List<Document> logs = (List<Document>) result.get("logs");
+%>
     <html>
     <head>
         <title>Dashboard Analytics</title>
