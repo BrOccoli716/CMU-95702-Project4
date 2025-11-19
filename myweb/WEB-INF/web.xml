@@ -19,6 +19,16 @@
   </servlet-mapping>
 
   <servlet>
+    <servlet-name>TeamServlet</servlet-name>
+    <servlet-class>com.project.api.TeamServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>TeamServlet</servlet-name>
+    <url-pattern>/api/team</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
     <servlet-name>LogsDataServlet</servlet-name>
     <servlet-class>com.project.api.LogsDataServlet</servlet-class>
   </servlet>
