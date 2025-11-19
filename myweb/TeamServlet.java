@@ -44,16 +44,20 @@ public class TeamServlet extends HttpServlet {
             InputStream is = getClass().getClassLoader().getResourceAsStream("team_image_html.txt");
             if (is == null) throw new RuntimeException("team_image_html.txt Not Found!");
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            String line = reader.readLine();
+            List<String> lines = new ArrayList<>();
+            String in_line;
+            while ((in_line = reader.readLine()) != null) { lines.add(in_line); }
             System.out.println("Loaded txt (line count approx): finished");
-
-            org.jsoup.nodes.Document doc = Jsoup.parse(line);
-            Elements images = doc.select("img");
-            Elements names = doc.select("a.Anchor_anchor__cSc3P.TeamFigure_tfMainLink__OPLFu");
-            for (int i = 0; i < names.size(); i++) {
-                Element image = images.get(i);
-                Element name = names.get(i);
-                imageUrlMap.put(name.text().toLowerCase(), image.attr("src"));
+            System.out.println("Read in " + lines.size() + " lines");
+            for (String line: lines) {
+                org.jsoup.nodes.Document doc = Jsoup.parse(line);
+                Elements images = doc.select("img");
+                Elements names = doc.select("div.title");
+                for (int i = 0; i < names.size(); i++) {
+                    Element image = images.get(i);
+                    Element name = names.get(i);
+                    imageUrlMap.put(name.text().toLowerCase().replace(" logo", ""), image.attr("src"));
+                }
             }
             System.out.println("Processed " + imageUrlMap.size() + " teams");
         } catch (Exception e) {
