@@ -98,7 +98,7 @@
         <tr><th>Player Name</th><th>Search Count</th></tr>
         <% if (topPlayers != null) { %>
             <% for (Document p : topPlayers) { %>
-                <% out.println("<tr><td>" + p.getString("first_name") + " " + p.getString("last_name") + "</td><td>" + p.getInteger("count") + "</td></tr>"); %>
+                <% out.println("<tr><td>" + p.getString("playerName") + "</td><td>" + p.getInteger("count") + "</td></tr>"); %>
             <% } %>
         <% } %>
     </table>
@@ -108,10 +108,13 @@
     <table style="width:90%;">
         <tr>
             <th>Time</th>
-            <th>API</th>
-            <th>Device</th>
+            <th>IP Address</th>
+            <th>Device Model</th>
+            <th>API Path</th>
+            <th>Request Params</th>
             <th>Latency (ms)</th>
             <th>Status</th>
+            <th>Response Size</th>
         </tr>
         <% if (logs != null) { %>
             <% for (Document log : logs) { %>
