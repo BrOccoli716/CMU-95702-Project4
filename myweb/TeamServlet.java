@@ -89,6 +89,7 @@ public class TeamServlet extends HttpServlet {
             JsonArray data = root.getAsJsonArray("data");
             for (JsonElement e : data) {
                 JsonObject teamJson = e.getAsJsonObject();
+                if (teamJson.get("id").getAsInt() > 30) { continue; }
                 Document team = new Document("id", teamJson.get("id").getAsInt())
                         .append("full_name", teamJson.get("full_name").getAsString())
                         .append("name", teamJson.get("name").getAsString())
@@ -126,6 +127,7 @@ public class TeamServlet extends HttpServlet {
 
     private String repairJson(String json) {
         json = json.replace("full_name", "fullName");
+        json = json.replace("LA Clippers", "Los Angeles Clippers");
         return json;
     }
 

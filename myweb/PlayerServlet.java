@@ -196,6 +196,7 @@ public class PlayerServlet extends HttpServlet {
         json = json.replace("draft_round", "draftRound");
         json = json.replace("draft_number", "draftNumber");
         json = json.replace("full_name", "fullName");
+        json = json.replace("LA Clippers", "Los Angeles Clippers");
         return json;
     }
 
