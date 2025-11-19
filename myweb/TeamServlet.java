@@ -145,6 +145,9 @@ public class TeamServlet extends HttpServlet {
             sendSuccess(resp, allTeams);
             latency = System.currentTimeMillis() - start + apiLatency;
             LogHelper.logRequest(req, HttpServletResponse.SC_OK, latency, allTeams.size());
+            for (Document team: allTeams) {
+                LogHelper.incrementTeamCount(team.getInteger("id"), team.getString("full_name"));
+            }
             return;
         }
         if (query != null && query.length() > 30) {
@@ -161,6 +164,7 @@ public class TeamServlet extends HttpServlet {
                 team.getString("name").toLowerCase().contains(query) ||
                 team.getString("city").toLowerCase().contains(query)) {
                 matches.add(team);
+                LogHelper.incrementTeamCount(team.getInteger("id"), team.getString("full_name"));
             }
         }
         sendSuccess(resp, matches);

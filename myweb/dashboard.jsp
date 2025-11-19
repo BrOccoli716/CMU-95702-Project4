@@ -103,6 +103,17 @@
         <% } %>
     </table>
 
+    <!-- Top Teams -->
+    <h2>Top Searched Teams</h2>
+    <table>
+        <tr><th>Team Name</th><th>Search Count</th></tr>
+        <% if (topTeams != null) { %>
+            <% for (Document t : topTeams) { %>
+                <% out.println("<tr><td>" + t.getString("teamName") + "</td><td>" + t.getInteger("count") + "</td></tr>"); %>
+            <% } %>
+        <% } %>
+    </table>
+
     <!-- Logs -->
     <h2>All Logs</h2>
     <table style="width:90%;">

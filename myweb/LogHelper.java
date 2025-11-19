@@ -16,6 +16,7 @@ public class LogHelper {
     private static MongoClient client;
     private static MongoCollection<Document> logs;
     private static MongoCollection<Document> playerStats;
+    private static MongoCollection<Document> teamStats;
 
     static {
         String uri = "mongodb+srv://yimingfu:mJt6njGpLAniRJa7@cluster0.b5tx8sw.mongodb.net/?appName=Cluster0";
@@ -23,6 +24,7 @@ public class LogHelper {
         MongoDatabase db = client.getDatabase("testdb");
         logs = db.getCollection("logs");
         playerStats = db.getCollection("playerStats");
+        teamStats = db.getCollection("teamStats");
     }
 
     public static void logRequest(HttpServletRequest req, 
@@ -55,6 +57,14 @@ public class LogHelper {
         playerStats.updateOne(filter, update, new UpdateOptions().upsert(true));
     }
 
+    public static void incrementTeamCount(int teamId, String teamName) {
+        Document filter = new Document("teamId", teamId);
+        Document update = new Document("$inc", new Document("count", 1))
+                .append("$setOnInsert",
+                        new Document("teamName", teamName));
+        teamStats.updateOne(filter, update, new UpdateOptions().upsert(true));
+    }
+
     public static List<Document> getTopPlayers(int limit) {
         List<Document> result = new ArrayList<>();
         playerStats.find()
@@ -64,7 +74,16 @@ public class LogHelper {
         return result;
     }
 
-    public static Document buildAnalyticsJson(int playerLimit) {
+    public static List<Document> getTopTeams(int limit) {
+        List<Document> result = new ArrayList<>();
+        teamStats.find()
+                .sort(new Document("count", -1))
+                .limit(limit)
+                .into(result);
+        return result;
+    }
+
+    public static Document buildAnalyticsJson(int playerLimit, int teamLimit) {
         Document result = new Document();
         List<Document> logs = getAllLogs();
         // 1. API REQUEST FREQUENCY
@@ -123,6 +142,9 @@ public class LogHelper {
         // 5. TOP PLAYERS
         List<Document> topPlayers = getTopPlayers(playerLimit); // already sorted & limit
         result.append("topPlayers", topPlayers);
+        // 6. TOP TEAMS
+        List<Document> topTeams = getTopTeams(teamLimit); // already sorted & limit
+        result.append("topTeams", topTeams);
         // For logs
         result.append("logs", logs);
         // Return all fields

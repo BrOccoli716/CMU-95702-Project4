@@ -10,10 +10,11 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class DashboardServlet extends HttpServlet {
     private static final int playerLimit = 5;
+    private static final int teamLimit = 3;
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
         throws IOException, ServletException {
-        Document result = LogHelper.buildAnalyticsJson(playerLimit);
+        Document result = LogHelper.buildAnalyticsJson(playerLimit, teamLimit);
         // Send to JSP
         req.setAttribute("result", result);
         req.getRequestDispatcher("/dashboard.jsp").forward(req, resp);
