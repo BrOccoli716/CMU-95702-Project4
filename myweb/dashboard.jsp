@@ -1,19 +1,23 @@
+<!-- Name: Yiming Fu -->
+<!-- Andrew ID: yimingfu -->
+
 <%@ page import="org.bson.Document" %>
 <%@ page import="java.util.*" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <% 
     Document result = (Document) request.getAttribute("result");
-    if (result == null) { 
+    if (result == null) {  // If no result, show corresponding prompt
 %>
     <h2>No analytics data available.</h2>
 <% 
-    } else {
+    } else {  // Fetch all fields of analytics
         Map<String, Integer> apiFreq = (Map<String, Integer>) result.get("apiFrequency");
         Map<String, Double> avgLatency = (Map<String, Double>) result.get("avgLatency");
         Document errorRate = result.get("errorRate", Document.class);
         List<Document> topDevices = (List<Document>) result.get("topDevices");
         List<Document> topPlayers = (List<Document>) result.get("topPlayers");
+        List<Document> topTeams = (List<Document>) result.get("topTeams");
         List<Document> logs = (List<Document>) result.get("logs");
 %>
     <html>
@@ -127,6 +131,7 @@
             <th>Status</th>
             <th>Response Size</th>
         </tr>
+        <!-- Print out all logs iteratively -->
         <% if (logs != null) { %>
             <% for (Document log : logs) { %>
                 <% out.println("<tr>"); %>

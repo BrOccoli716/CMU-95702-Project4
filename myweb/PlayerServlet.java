@@ -1,3 +1,6 @@
+// Name: Yiming Fu
+// Andrew ID: yimingfu
+
 package com.project.api;
 
 import java.net.*;
@@ -22,6 +25,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+// Define Team class
 class Team {
     int id;
     String conference, division, city;
@@ -29,6 +33,7 @@ class Team {
     String imageUrl;
 }
 
+// Define Player Class
 class Player {
     int id;
     String first_name, last_name;
@@ -40,16 +45,19 @@ class Player {
     String imageUrl;
 }
 
+// Define Meta class for third party API response
 class Meta {
     public Integer next_cursor;
     public Integer per_page;
 }
 
+// Define PlayerResponse class for third party API response
 class PlayerResponse {
     public List<Player> data;
     public Meta meta;
 }
 
+// Servlet for Player
 public class PlayerServlet extends HttpServlet {
     private final String API_URL = "https://api.balldontlie.io/v1/players?per_page=100";
     private final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
@@ -59,7 +67,9 @@ public class PlayerServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         System.out.println("Servlet init: Loading player_image_html.txt...");
+        // Extract player image url for each player
         try {
+            // Read in txt file
             InputStream is = getClass().getClassLoader().getResourceAsStream("player_image_html.txt");
             if (is == null) throw new RuntimeException("player_image_html.txt Not Found!");
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
@@ -69,10 +79,12 @@ public class PlayerServlet extends HttpServlet {
             System.out.println("Loaded txt (line count approx): finished");
             System.out.println("Read in " + lines.size() + " lines");
             for (String line: lines) {
+                // Parse HTML scripts
                 Document doc = Jsoup.parse(line);
                 Elements images = doc.select("img");
                 Elements texts = doc.select("tbody").select("tr");
                 for (int i = 0; i < texts.size(); i++) {
+                    // Extract team name and image url
                     Element image = images.get(i);
                     Element text = texts.get(i);
                     Elements values = text.select("td");
@@ -92,10 +104,12 @@ public class PlayerServlet extends HttpServlet {
         }
     }
 
+    // Fetch response from third party API
     private JsonObject fetchResponse(String urlString) {
         JsonObject result = new JsonObject();
         Gson gson = new Gson();
         try {
+            // Set up connection
             URL url = new URI(urlString).toURL();
             System.out.println("Request URL: " + url);
             // Establish URL connection
@@ -140,6 +154,7 @@ public class PlayerServlet extends HttpServlet {
                 json.append(line);
             }
             in.close();
+            // Generate result
             JsonElement body = JsonParser.parseString(json.toString());
             result.add("data", body);
             return result;
@@ -161,6 +176,7 @@ public class PlayerServlet extends HttpServlet {
         }
     }
 
+    // Build query URL with parameters
     private String buildUrl(String firstName, String lastName, Integer next_cursor) {
         String urlString = API_URL;
         if (firstName != "" && firstName != null) { urlString += "&first_name=%s".formatted(firstName); }
@@ -170,6 +186,7 @@ public class PlayerServlet extends HttpServlet {
         return urlString;
     }
 
+    // Send error response to mobile app
     private void sendError(HttpServletResponse response, String message) throws IOException {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -178,6 +195,7 @@ public class PlayerServlet extends HttpServlet {
         response.getWriter().write(json.toString());
     }
 
+    // Send success response to mobile app
     private void sendSuccess(HttpServletResponse response, Object data) throws IOException {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);  // 200
@@ -188,6 +206,7 @@ public class PlayerServlet extends HttpServlet {
         out.flush();
     }
 
+    // Fix naming discrepancies of fields
     private String repairJson(String json) {
         json = json.replace("first_name", "firstName");
         json = json.replace("last_name", "lastName");
@@ -200,6 +219,7 @@ public class PlayerServlet extends HttpServlet {
         return json;
     }
 
+    // Convert inch to cm
     private String convertHeight(String height) {
         if (height == null) { return "Unknown"; }
         String[] parts = height.split("-");
@@ -211,6 +231,7 @@ public class PlayerServlet extends HttpServlet {
         return height.replace("-", "'") + "\" " + height_cm;
     }
 
+    // Convert lb to kg
     private String convertWeight(String weight) {
         if (weight == null) { return "Unknown"; }
         double lb = Double.parseDouble(weight);
@@ -219,6 +240,7 @@ public class PlayerServlet extends HttpServlet {
         return weight + " lb " + weight_kg;
     }
 
+    // Get method for PlayerServlet
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
@@ -231,9 +253,11 @@ public class PlayerServlet extends HttpServlet {
         if (firstName != null) { firstName = firstName.replace(" ", "_").toLowerCase(); }
         String lastName = req.getParameter("last_name");
         if (lastName != null) { lastName = lastName.replace(" ", "_").toLowerCase(); }
+        // If query is too long (error)
         if ((firstName != null && firstName.length() > 20) || (lastName != null && lastName.length() > 20)) {
             sendError(res, "Query too long!");
             latency = System.currentTimeMillis() - startTime;
+            // Write to query logs
             LogHelper.logRequest(req, HttpServletResponse.SC_BAD_REQUEST, latency, 0);
             return;
         }
@@ -244,7 +268,9 @@ public class PlayerServlet extends HttpServlet {
         Integer cursor = null;
         int result_size = 0;
         while (true) {
+            // Fetch response from third party API
             JsonObject result = fetchResponse(urlString);
+            // Deal for error status code
             if (result.has("error")) {
                 if (result.get("status").getAsInt() != 429) {
                     sendError(res, result.get("error").getAsString());
@@ -254,6 +280,7 @@ public class PlayerServlet extends HttpServlet {
                 }
                 break;  // for error 429 (this request exceeds limit, but others count)
             }
+            // Extract player information from response
             PlayerResponse json = gson.fromJson(result.get("data"), PlayerResponse.class);
             if (json != null) { System.out.println("Fetched " + json.data.size() + " players"); }
             result_size += json.toString().length();
@@ -275,8 +302,10 @@ public class PlayerServlet extends HttpServlet {
                 p.height = convertHeight(p.height);
                 p.weight = convertWeight(p.weight);
                 players.add(p); 
+                // Write to player logs
                 LogHelper.incrementPlayerCount(p.id, p.first_name + " " + p.last_name);
             }
+            // If there is more players to fetch
             if (json.meta.next_cursor != null) {
                 cursor = json.meta.next_cursor;
                 urlString = buildUrl(firstName, lastName, cursor);
@@ -285,9 +314,10 @@ public class PlayerServlet extends HttpServlet {
                 break;
             }
         }
-        // response result to front-end
+        // Write response with returned players
         sendSuccess(res, players);
         latency = System.currentTimeMillis() - startTime;
+        // Write to query logs
         LogHelper.logRequest(req, HttpServletResponse.SC_OK, latency, result_size);
     }
 }

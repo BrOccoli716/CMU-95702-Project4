@@ -1,3 +1,6 @@
+// Name: Yiming Fu
+// Andrew ID: yimingfu
+
 package com.project.api;
 
 import com.mongodb.client.MongoClient;
@@ -12,12 +15,14 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
+// This class is defined to write logs to Mongo DB
 public class LogHelper {
     private static MongoClient client;
     private static MongoCollection<Document> logs;
     private static MongoCollection<Document> playerStats;
     private static MongoCollection<Document> teamStats;
 
+    // Execute only once, which will setup all connecting objects
     static {
         String uri = "mongodb+srv://yimingfu:mJt6njGpLAniRJa7@cluster0.b5tx8sw.mongodb.net/?appName=Cluster0";
         client = MongoClients.create(uri);
@@ -27,10 +32,12 @@ public class LogHelper {
         teamStats = db.getCollection("teamStats");
     }
 
+    // Write request logs
     public static void logRequest(HttpServletRequest req, 
                            int statusCode, 
                            long thirdPartyLatency,
                            int responseSize) {
+        // Establish query document
         Document logDoc = new Document()
                 .append("timestamp", System.currentTimeMillis())
                 .append("clientIP", req.getRemoteAddr())
@@ -40,15 +47,18 @@ public class LogHelper {
                 .append("thirdPartyLatency", thirdPartyLatency)
                 .append("statusCode", statusCode)
                 .append("responseSize", responseSize);
+        // Write to Mongo DB
         logs.insertOne(logDoc);
     }
 
+    // Return all stored logs within Mongo DB
     public static List<Document> getAllLogs() {
         List<Document> list = new ArrayList<>();
         logs.find().into(list);
         return list;
     }
 
+    // Increment player count by one
     public static void incrementPlayerCount(int playerId, String playerName) {
         Document filter = new Document("playerId", playerId);
         Document update = new Document("$inc", new Document("count", 1))
@@ -57,6 +67,7 @@ public class LogHelper {
         playerStats.updateOne(filter, update, new UpdateOptions().upsert(true));
     }
 
+    // Increment team count by one
     public static void incrementTeamCount(int teamId, String teamName) {
         Document filter = new Document("teamId", teamId);
         Document update = new Document("$inc", new Document("count", 1))
@@ -65,6 +76,7 @@ public class LogHelper {
         teamStats.updateOne(filter, update, new UpdateOptions().upsert(true));
     }
 
+    // Fetch top players list
     public static List<Document> getTopPlayers(int limit) {
         List<Document> result = new ArrayList<>();
         playerStats.find()
@@ -74,6 +86,7 @@ public class LogHelper {
         return result;
     }
 
+    // Fetch top teams list
     public static List<Document> getTopTeams(int limit) {
         List<Document> result = new ArrayList<>();
         teamStats.find()
@@ -83,6 +96,7 @@ public class LogHelper {
         return result;
     }
 
+    // Generate analytics result
     public static Document buildAnalyticsJson(int playerLimit, int teamLimit) {
         Document result = new Document();
         List<Document> logs = getAllLogs();
