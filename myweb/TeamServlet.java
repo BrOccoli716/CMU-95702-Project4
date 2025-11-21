@@ -31,99 +31,13 @@ public class TeamServlet extends HttpServlet {
     private final String API_URL = "https://api.balldontlie.io/v1/teams";
     private final String API_KEY = "6b6de5ab-779d-4100-bcb8-533fef7ee07e";
     private long apiLatency;  // Latency for requesting all teams from third party API
-    private Map<String, String> imageUrlMap = new HashMap<>();
-    private List<Document> allTeams = new ArrayList<>();
+    private final TeamServiceModel model = new TeamServiceModel();
 
     @Override
     public void init() throws ServletException {
         super.init();
-        buildImageUrlMap();
-        loadTeams();
-    }
-
-    // Extract team image url for each team
-    private void buildImageUrlMap() {
-        System.out.println("Servlet init: Loading team_image_html.txt...");
-        try {
-            // Read in txt file
-            InputStream is = getClass().getClassLoader().getResourceAsStream("team_image_html.txt");
-            if (is == null) throw new RuntimeException("team_image_html.txt Not Found!");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            List<String> lines = new ArrayList<>();
-            String in_line;
-            while ((in_line = reader.readLine()) != null) { lines.add(in_line); }
-            System.out.println("Loaded txt (line count approx): finished");
-            System.out.println("Read in " + lines.size() + " lines");
-            for (String line: lines) {
-                // Parse HTML scripts
-                org.jsoup.nodes.Document doc = Jsoup.parse(line);
-                Elements images = doc.select("img");
-                Elements names = doc.select("div.title");
-                for (int i = 0; i < names.size(); i++) {
-                    // Extract team name and image url
-                    Element image = images.get(i);
-                    Element name = names.get(i);
-                    imageUrlMap.put(name.text().toLowerCase().replace(" logo", ""), image.attr("src"));
-                }
-            }
-            System.out.println("Processed " + imageUrlMap.size() + " teams");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Fetch all teams' information from third party API
-    // Because third party API doesn't support query team by name, so I fetched all information initially, and respond to mobile by selecting matching teams
-    private void loadTeams() {
-        try {
-            // Set up connection to third party API
-            long start = System.currentTimeMillis();
-            URL apiUrl = new URL(API_URL);
-            HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Authorization", API_KEY);
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
-
-            // Read in response
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            StringBuilder json = new StringBuilder();
-            String line;
-
-            while ((line = in.readLine()) != null) json.append(line);
-            in.close();
-
-            // Parse JSON
-            Gson gson = new Gson();
-            JsonObject root = gson.fromJson(json.toString(), JsonObject.class);
-            JsonArray data = root.getAsJsonArray("data");
-            for (JsonElement e : data) {
-                JsonObject teamJson = e.getAsJsonObject();
-                // Only keep the first 30 teams
-                if (teamJson.get("id").getAsInt() > 30) { continue; }
-                String full_name = teamJson.get("full_name").getAsString();
-                // Special cases
-                if (full_name.equals("LA Clippers")) { full_name = "Los Angeles Clippers"; }
-                String city = teamJson.get("city").getAsString();
-                if (city.equals("LA")) { city = "Los Angeles"; }
-                // Extract team information
-                Document team = new Document("id", teamJson.get("id").getAsInt())
-                        .append("full_name", full_name)
-                        .append("name", teamJson.get("name").getAsString())
-                        .append("city", city)
-                        .append("division", teamJson.get("division").getAsString())
-                        .append("conference", teamJson.get("conference").getAsString())
-                        .append("abbreviation", teamJson.get("abbreviation").getAsString())
-                        .append("imageUrl", imageUrlMap.get(full_name.toLowerCase()));
-                allTeams.add(team);
-            }
-            // Calculate latency
-            apiLatency = System.currentTimeMillis() - start;
-            System.out.println("Loaded " + allTeams.size() + " teams!");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        model.buildImageUrlMap();
+        apiLatency = model.loadTeams(API_URL, API_KEY);
     }
 
     // Send error repsonse to mobile app
@@ -142,15 +56,8 @@ public class TeamServlet extends HttpServlet {
         JsonObject wrapper = new JsonObject();
         wrapper.add("data", new Gson().toJsonTree(data));
         PrintWriter out = response.getWriter();
-        out.write(repairJson(wrapper.toString()));
+        out.write(model.repairJson(wrapper.toString()));
         out.flush();
-    }
-
-    // Special case
-    private String repairJson(String json) {
-        json = json.replace("full_name", "fullName");
-        json = json.replace("LA Clippers", "Los Angeles Clippers");
-        return json;
     }
 
     // Get method for TeamServlet
@@ -163,6 +70,7 @@ public class TeamServlet extends HttpServlet {
         String query = req.getParameter("team");
         // Default: search for all teams
         if (query == null || query.isEmpty()) {
+            List<Document> allTeams = model.getAllTeams();
             sendSuccess(resp, allTeams);
             latency = System.currentTimeMillis() - start + apiLatency;
             // Write to query logs
@@ -183,16 +91,10 @@ public class TeamServlet extends HttpServlet {
         }
 
         query = query.toLowerCase();
-        List<Document> matches = new ArrayList<>();
-        for (Document team : allTeams) {
-            // Fetch matching teams
-            if (team.getString("full_name").toLowerCase().contains(query) ||
-                team.getString("name").toLowerCase().contains(query) ||
-                team.getString("city").toLowerCase().contains(query)) {
-                matches.add(team);
-                // Write to team logs
-                LogHelper.incrementTeamCount(team.getInteger("id"), team.getString("full_name"));
-            }
+        List<Document> matches = model.findMatchedTeams(query);
+        for (Document team : matches) {
+            // Write to team logs
+            LogHelper.incrementTeamCount(team.getInteger("id"), team.getString("full_name"));
         }
         // Write response with matching teams
         sendSuccess(resp, matches);
