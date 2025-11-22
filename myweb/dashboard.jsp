@@ -61,7 +61,7 @@
                 <tr>
                     <td><%= key %></td>
                     <td><%= apiFreq.get(key) %></td>
-                </tr> %>
+                </tr>
             <% } %>
         <% } %>
     </table>
